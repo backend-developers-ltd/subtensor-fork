@@ -170,6 +170,28 @@ impl<T: Config> Pallet<T> {
         neuron
     }
 
+    pub fn get_neuron_certificate(netuid: u16, uid: u16) -> Option<NeuronCertificate> {
+        if !Self::if_subnet_exist(netuid) {
+            return None;
+        }
+
+        let _hotkey = Self::get_hotkey_for_net_and_uid(netuid, uid);
+        let hotkey;
+        if _hotkey.is_err() {
+            return None;
+        } else {
+            // No error, hotkey was registered
+            hotkey = _hotkey.expect("Hotkey should exist");
+        }
+
+        if Self::has_neuron_certificate(netuid, &hotkey) {
+            let certificate = NeuronCertificates::<T>::get(netuid, hotkey).unwrap();
+			Some(certificate)
+        } else {
+			None
+        }
+    }
+
     fn get_neuron_lite_subnet_exists(netuid: u16, uid: u16) -> Option<NeuronInfoLite<T>> {
         let _hotkey = Self::get_hotkey_for_net_and_uid(netuid, uid);
         let hotkey;

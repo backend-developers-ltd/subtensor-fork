@@ -41,7 +41,13 @@ pub trait SubtensorCustomApi<BlockHash> {
     fn get_neurons(&self, netuid: u16, at: Option<BlockHash>) -> RpcResult<Vec<u8>>;
     #[method(name = "neuronInfo_getNeuron")]
     fn get_neuron(&self, netuid: u16, uid: u16, at: Option<BlockHash>) -> RpcResult<Vec<u8>>;
-
+    #[method(name = "neuronInfo_getNeuronCertificate")]
+    fn get_neuron_certificate(
+        &self,
+        netuid: u16,
+        uid: u16,
+        at: Option<BlockHash>,
+    ) -> RpcResult<Vec<u8>>;
     #[method(name = "subnetInfo_getSubnetInfo")]
     fn get_subnet_info(&self, netuid: u16, at: Option<BlockHash>) -> RpcResult<Vec<u8>>;
     #[method(name = "subnetInfo_getSubnetsInfo")]
@@ -206,6 +212,25 @@ where
             CallError::Custom(ErrorObject::owned(
                 Error::RuntimeError.into(),
                 "Unable to get neuron info.",
+                Some(e.to_string()),
+            ))
+            .into()
+        })
+    }
+
+    fn get_neuron_certificate(
+        &self,
+        netuid: u16,
+        uid: u16,
+        at: Option<<Block as BlockT>::Hash>,
+    ) -> RpcResult<Vec<u8>> {
+        let api = self.client.runtime_api();
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
+
+        api.get_neuron_certificate(at, netuid, uid).map_err(|e| {
+            CallError::Custom(ErrorObject::owned(
+                Error::RuntimeError.into(),
+                "Unable to get neuron certificate.",
                 Some(e.to_string()),
             ))
             .into()

@@ -1,4 +1,5 @@
 use super::*;
+use crate::certificate::Certificate;
 use frame_support::inherent::Vec;
 use frame_support::sp_std::vec;
 
@@ -63,6 +64,7 @@ impl<T: Config> Pallet<T> {
         protocol: u8,
         placeholder1: u8,
         placeholder2: u8,
+        certificate: Option<Certificate>,
     ) -> dispatch::DispatchResult {
         // --- 1. We check the callers (hotkey) signature.
         let hotkey_id = ensure_signed(origin)?;
@@ -87,6 +89,11 @@ impl<T: Config> Pallet<T> {
             Self::axon_passes_rate_limit(netuid, &prev_axon, current_block),
             Error::<T>::ServingRateLimitExceeded
         );
+
+        // --- 5. Check certificate
+		if let Some(certificate) = certificate {
+			NeuronCertificates::<T>::insert(netuid, hotkey_id.clone(), NeuronCertificate{certificate})
+		}
 
         // --- 6. We insert the axon meta.
         prev_axon.block = Self::get_current_block_as_u64();
@@ -239,6 +246,10 @@ impl<T: Config> Pallet<T> {
 
     pub fn has_axon_info(netuid: u16, hotkey: &T::AccountId) -> bool {
         return Axons::<T>::contains_key(netuid, hotkey);
+    }
+
+    pub fn has_neuron_certificate(netuid: u16, hotkey: &T::AccountId) -> bool {
+        return NeuronCertificates::<T>::contains_key(netuid, hotkey);
     }
 
     pub fn has_prometheus_info(netuid: u16, hotkey: &T::AccountId) -> bool {

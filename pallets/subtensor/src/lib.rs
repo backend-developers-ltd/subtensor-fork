@@ -35,6 +35,7 @@ mod benchmarks;
 // =========================
 mod block_step;
 
+mod certificate;
 mod epoch;
 mod math;
 mod registration;
@@ -57,6 +58,7 @@ pub mod migration;
 #[frame_support::pallet]
 pub mod pallet {
 
+    use crate::certificate::Certificate;
     use frame_support::{
         dispatch::GetDispatchInfo,
         inherent::Vec,
@@ -522,6 +524,14 @@ pub mod pallet {
         pub placeholder2: u8, // --- Axon proto placeholder 1.
     }
 
+    // --- Struct for NeuronCertificate.
+    pub type NeuronCertificateOf = NeuronCertificate;
+
+    #[derive(Decode, Encode, Default, TypeInfo, PartialEq, Eq, Clone, Debug)]
+    pub struct NeuronCertificate {
+        pub certificate: Certificate,
+    }
+
     // --- Struct for Prometheus.
     pub type PrometheusInfoOf = PrometheusInfo;
     #[derive(Encode, Decode, Default, TypeInfo, Clone, PartialEq, Eq, Debug)]
@@ -568,6 +578,16 @@ pub mod pallet {
         Blake2_128Concat,
         T::AccountId,
         PrometheusInfoOf,
+        OptionQuery,
+    >;
+    #[pallet::storage] // --- MAP ( netuid, hotkey ) --> certificate
+    pub(super) type NeuronCertificates<T: Config> = StorageDoubleMap<
+        _,
+        Identity,
+        u16,
+        Blake2_128Concat,
+        T::AccountId,
+        NeuronCertificateOf,
         OptionQuery,
     >;
 
@@ -1446,6 +1466,91 @@ pub mod pallet {
                 protocol,
                 placeholder1,
                 placeholder2,
+                None,
+            )
+        }
+
+        // ---- Serves or updates axon /promethteus information for the neuron associated with the caller. If the caller is
+        // already registered the metadata is updated. If the caller is not registered this call throws NotRegistered.
+        //
+        // # Args:
+        // 	* 'origin': (<T as frame_system::Config>Origin):
+        // 		- The signature of the caller.
+        //
+        // 	* 'netuid' (u16):
+        // 		- The u16 network identifier.
+        //
+        // 	* 'version' (u64):
+        // 		- The bittensor version identifier.
+        //
+        // 	* 'ip' (u64):
+        // 		- The endpoint ip information as a u128 encoded integer.
+        //
+        // 	* 'port' (u16):
+        // 		- The endpoint port information as a u16 encoded integer.
+        //
+        // 	* 'ip_type' (u8):
+        // 		- The endpoint ip version as a u8, 4 or 6.
+        //
+        // 	* 'protocol' (u8):
+        // 		- UDP:1 or TCP:0
+        //
+        // 	* 'placeholder1' (u8):
+        // 		- Placeholder for further extra params.
+        //
+        // 	* 'placeholder2' (u8):
+        // 		- Placeholder for further extra params.
+        //
+        // 	* 'certificate' (Vec<u8>):
+        // 		- TLS certificate
+        //
+        // # Event:
+        // 	* AxonServed;
+        // 		- On successfully serving the axon info.
+        //
+        // # Raises:
+        // 	* 'NetworkDoesNotExist':
+        // 		- Attempting to set weights on a non-existent network.
+        //
+        // 	* 'NotRegistered':
+        // 		- Attempting to set weights from a non registered account.
+        //
+        // 	* 'InvalidIpType':
+        // 		- The ip type is not 4 or 6.
+        //
+        // 	* 'InvalidIpAddress':
+        // 		- The numerically encoded ip address does not resolve to a proper ip.
+        //
+        // 	* 'ServingRateLimitExceeded':
+        // 		- Attempting to set prometheus information withing the rate limit min.
+        //
+        #[pallet::call_index(40)]
+        #[pallet::weight((Weight::from_ref_time(19_000_000)
+		.saturating_add(T::DbWeight::get().reads(2))
+		.saturating_add(T::DbWeight::get().writes(1)), DispatchClass::Normal, Pays::No))]
+        pub fn serve_axon_tls(
+            origin: OriginFor<T>,
+            netuid: u16,
+            version: u32,
+            ip: u128,
+            port: u16,
+            ip_type: u8,
+            protocol: u8,
+            placeholder1: u8,
+            placeholder2: u8,
+            certificate: Certificate,
+        ) -> DispatchResult {
+            Self::do_serve_axon(
+                origin,
+                netuid,
+                version,
+                ip,
+                port,
+                ip_type,
+                protocol,
+                placeholder1,
+                placeholder2,
+                Some(certificate),
             )
         }
 
@@ -1866,6 +1971,10 @@ where
                 Ok((CallType::Register, transaction_fee, who.clone()))
             }
             Some(Call::serve_axon { .. }) => {
+                let transaction_fee = 0;
+                Ok((CallType::Serve, transaction_fee, who.clone()))
+            }
+            Some(Call::serve_axon_tls { .. }) => {
                 let transaction_fee = 0;
                 Ok((CallType::Serve, transaction_fee, who.clone()))
             }
