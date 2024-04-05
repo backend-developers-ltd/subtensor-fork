@@ -1470,7 +1470,8 @@ pub mod pallet {
             )
         }
 
-        // ---- Serves or updates axon /promethteus information for the neuron associated with the caller. If the caller is
+        // ---- Same as `serve_axon` but takes a certificate as an extra optional argument.
+        // Serves or updates axon /promethteus information for the neuron associated with the caller. If the caller is
         // already registered the metadata is updated. If the caller is not registered this call throws NotRegistered.
         //
         // # Args:

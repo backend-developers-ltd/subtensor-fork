@@ -99,7 +99,7 @@ fn test_serving_ok() {
 fn test_serving_tls_ok() {
     new_test_ext().execute_with(|| {
         let hotkey_account_id = U256::from(1);
-		let uid: u16 = 0;
+        let uid: u16 = 0;
         let netuid: u16 = 1;
         let tempo: u16 = 13;
         let version: u32 = 2;

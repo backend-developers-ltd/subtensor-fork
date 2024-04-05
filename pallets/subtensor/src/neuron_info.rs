@@ -79,14 +79,10 @@ impl<T: Config> Pallet<T> {
     }
 
     fn get_neuron_subnet_exists(netuid: u16, uid: u16) -> Option<NeuronInfo<T>> {
-        let _hotkey = Self::get_hotkey_for_net_and_uid(netuid, uid);
-        let hotkey;
-        if _hotkey.is_err() {
-            return None;
-        } else {
-            // No error, hotkey was registered
-            hotkey = _hotkey.expect("Hotkey should exist");
-        }
+        let hotkey = match Self::get_hotkey_for_net_and_uid(netuid, uid) {
+            Ok(hotkey) => hotkey, // hotkey was registered
+            Err(_) => return None,
+        };
 
         let axon_info = Self::get_axon_info(netuid, &hotkey.clone());
 
@@ -175,32 +171,23 @@ impl<T: Config> Pallet<T> {
             return None;
         }
 
-        let _hotkey = Self::get_hotkey_for_net_and_uid(netuid, uid);
-        let hotkey;
-        if _hotkey.is_err() {
-            return None;
-        } else {
-            // No error, hotkey was registered
-            hotkey = _hotkey.expect("Hotkey should exist");
-        }
+        let hotkey = match Self::get_hotkey_for_net_and_uid(netuid, uid) {
+            Ok(hotkey) => hotkey, // hotkey was registered
+            Err(_) => return None,
+        };
 
         if Self::has_neuron_certificate(netuid, &hotkey) {
-            let certificate = NeuronCertificates::<T>::get(netuid, hotkey).unwrap();
-			Some(certificate)
+            NeuronCertificates::<T>::get(netuid, hotkey)
         } else {
 			None
         }
     }
 
     fn get_neuron_lite_subnet_exists(netuid: u16, uid: u16) -> Option<NeuronInfoLite<T>> {
-        let _hotkey = Self::get_hotkey_for_net_and_uid(netuid, uid);
-        let hotkey;
-        if _hotkey.is_err() {
-            return None;
-        } else {
-            // No error, hotkey was registered
-            hotkey = _hotkey.expect("Hotkey should exist");
-        }
+        let hotkey = match Self::get_hotkey_for_net_and_uid(netuid, uid) {
+            Ok(hotkey) => hotkey, // hotkey was registered
+            Err(_) => return None,
+        };
 
         let axon_info = Self::get_axon_info(netuid, &hotkey.clone());
 

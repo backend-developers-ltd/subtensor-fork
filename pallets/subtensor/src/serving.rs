@@ -34,6 +34,9 @@ impl<T: Config> Pallet<T> {
     // 	* 'placeholder2' (u8):
     // 		- Placeholder for further extra params.
     //
+    // 	* 'certificate' (Option<Vec<u8>>):
+    // 		- Certificate for mutual Tls connection between neurons
+    //
     // # Event:
     // 	* AxonServed;
     // 		- On successfully serving the axon info.
