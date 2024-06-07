@@ -9,6 +9,37 @@ impl<T: Config> Pallet<T> {
         SubnetworkN::<T>::get(netuid)
     }
 
+    pub fn set_emission_for_uid(netuid: u16, neuron_uid: u16, emission: u64) {
+        Emission::<T>::mutate(netuid, |v| v[neuron_uid as usize] = emission);
+    }
+    pub fn set_trust_for_uid(netuid: u16, neuron_uid: u16, trust: u16) {
+        Trust::<T>::mutate(netuid, |v| v[neuron_uid as usize] = trust);
+    }
+    pub fn set_consensus_for_uid(netuid: u16, neuron_uid: u16, consensus: u16) {
+        Consensus::<T>::mutate(netuid, |v| v[neuron_uid as usize] = consensus);
+    }
+    pub fn set_incentive_for_uid(netuid: u16, neuron_uid: u16, incentive: u16) {
+        Incentive::<T>::mutate(netuid, |v| v[neuron_uid as usize] = incentive);
+    }
+    pub fn set_dividends_for_uid(netuid: u16, neuron_uid: u16, dividends: u16) {
+        Dividends::<T>::mutate(netuid, |v| v[neuron_uid as usize] = dividends);
+    }
+
+    fn reset_axon_info_for_uid(netuid: u16, old_hotkey: &T::AccountId, new_hotkey: &T::AccountId) {
+        let axon_info = AxonInfo {
+            block: 0,
+            version: 0,
+            ip: 0,
+            port: 0,
+            ip_type: 0,
+            protocol: 0,
+            placeholder1: 0,
+            placeholder2: 0,
+        };
+        Axons::<T>::remove(netuid, old_hotkey);
+        Axons::<T>::set(netuid, new_hotkey, Some(axon_info));
+    }
+
     /// Replace the neuron under this uid.
     pub fn replace_neuron(
         netuid: u16,
@@ -45,6 +76,15 @@ impl<T: Config> Pallet<T> {
         Uids::<T>::insert(netuid, new_hotkey.clone(), uid_to_replace); // Make uid - hotkey association.
         BlockAtRegistration::<T>::insert(netuid, uid_to_replace, block_number); // Fill block at registration.
         IsNetworkMember::<T>::insert(new_hotkey.clone(), netuid, true); // Fill network is member.
+
+        // 4. Reset trust, emission, consensus, incentive, dividends and axon_info for the new uid.
+        Self::set_trust_for_uid(netuid, uid_to_replace, 0);
+        Self::set_emission_for_uid(netuid, uid_to_replace, 0);
+        Self::set_consensus_for_uid(netuid, uid_to_replace, 0);
+        Self::set_incentive_for_uid(netuid, uid_to_replace, 0);
+        Self::set_dividends_for_uid(netuid, uid_to_replace, 0);
+
+        Self::reset_axon_info_for_uid(netuid, &old_hotkey, new_hotkey);
     }
 
     /// Appends the uid to the network.

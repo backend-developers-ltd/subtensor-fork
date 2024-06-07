@@ -49,6 +49,13 @@ fn test_replace_neuron() {
         let neuron_uid = SubtensorModule::get_uid_for_net_and_hotkey(netuid, &hotkey_account_id);
         assert_ok!(neuron_uid);
 
+        // set some values
+        SubtensorModule::set_trust_for_uid(netuid, neuron_uid.unwrap(), 5u16);
+        SubtensorModule::set_emission_for_uid(netuid, neuron_uid.unwrap(), 5u64);
+        SubtensorModule::set_consensus_for_uid(netuid, neuron_uid.unwrap(), 5u16);
+        SubtensorModule::set_incentive_for_uid(netuid, neuron_uid.unwrap(), 5u16);
+        SubtensorModule::set_dividends_for_uid(netuid, neuron_uid.unwrap(), 5u16);
+
         // Replace the neuron.
         SubtensorModule::replace_neuron(
             netuid,
@@ -75,6 +82,47 @@ fn test_replace_neuron() {
             &new_hotkey_account_id
         ));
         assert_eq!(curr_hotkey.unwrap(), new_hotkey_account_id);
+
+        assert_eq!(
+            SubtensorModule::has_axon_info(netuid, &hotkey_account_id),
+            false
+        );
+        // Check trust, emission, consensus, incentive, dividends have been reset to 0.
+        assert_eq!(
+            SubtensorModule::get_trust_for_uid(netuid, neuron_uid.unwrap()),
+            0
+        );
+        assert_eq!(
+            SubtensorModule::get_emission_for_uid(netuid, neuron_uid.unwrap()),
+            0
+        );
+        assert_eq!(
+            SubtensorModule::get_consensus_for_uid(netuid, neuron_uid.unwrap()),
+            0
+        );
+        assert_eq!(
+            SubtensorModule::get_incentive_for_uid(netuid, neuron_uid.unwrap()),
+            0
+        );
+        assert_eq!(
+            SubtensorModule::get_dividends_for_uid(netuid, neuron_uid.unwrap()),
+            0
+        );
+
+        assert_eq!(
+            SubtensorModule::has_axon_info(netuid, &hotkey.unwrap()),
+            false
+        );
+
+        // Check axon info has been reset.
+        let axon_info = SubtensorModule::get_axon_info(netuid, &curr_hotkey.unwrap());
+        assert_eq!(axon_info.ip, 0);
+        assert_eq!(axon_info.version, 0);
+        assert_eq!(axon_info.port, 0);
+        assert_eq!(axon_info.ip_type, 0);
+        assert_eq!(axon_info.protocol, 0);
+        assert_eq!(axon_info.placeholder1, 0);
+        assert_eq!(axon_info.placeholder2, 0);
     });
 }
 
