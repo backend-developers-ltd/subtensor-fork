@@ -29,7 +29,6 @@ use sp_std::marker::PhantomData;
 // ============================
 //	==== Benchmark Imports =====
 // ============================
-#[cfg(feature = "runtime-benchmarks")]
 mod benchmarks;
 
 // =========================
@@ -1002,19 +1001,18 @@ pub mod pallet {
     pub(super) type Rank<T: Config> =
         StorageMap<_, Identity, u16, Vec<u16>, ValueQuery, EmptyU16Vec<T>>;
     #[pallet::storage] // --- DMAP ( netuid ) --> trust
-    pub(super) type Trust<T: Config> =
-        StorageMap<_, Identity, u16, Vec<u16>, ValueQuery, EmptyU16Vec<T>>;
+    pub type Trust<T: Config> = StorageMap<_, Identity, u16, Vec<u16>, ValueQuery, EmptyU16Vec<T>>;
     #[pallet::storage] // --- DMAP ( netuid ) --> consensus
-    pub(super) type Consensus<T: Config> =
+    pub type Consensus<T: Config> =
         StorageMap<_, Identity, u16, Vec<u16>, ValueQuery, EmptyU16Vec<T>>;
     #[pallet::storage] // --- DMAP ( netuid ) --> incentive
-    pub(super) type Incentive<T: Config> =
+    pub type Incentive<T: Config> =
         StorageMap<_, Identity, u16, Vec<u16>, ValueQuery, EmptyU16Vec<T>>;
     #[pallet::storage] // --- DMAP ( netuid ) --> dividends
-    pub(super) type Dividends<T: Config> =
+    pub type Dividends<T: Config> =
         StorageMap<_, Identity, u16, Vec<u16>, ValueQuery, EmptyU16Vec<T>>;
     #[pallet::storage] // --- DMAP ( netuid ) --> emission
-    pub(super) type Emission<T: Config> =
+    pub type Emission<T: Config> =
         StorageMap<_, Identity, u16, Vec<u64>, ValueQuery, EmptyU64Vec<T>>;
     #[pallet::storage] // --- DMAP ( netuid ) --> last_update
     pub(super) type LastUpdate<T: Config> =
@@ -2063,7 +2061,7 @@ pub mod pallet {
                 let current_block_number: u64 = Self::get_current_block_as_u64();
                 let default_priority: u64 =
                     current_block_number - Self::get_last_update_for_uid(netuid, uid);
-                return default_priority + u32::max_value() as u64;
+                return default_priority + u32::MAX as u64;
             }
             0
         }
@@ -2141,7 +2139,7 @@ where
     pub fn get_priority_vanilla() -> u64 {
         // Return high priority so that every extrinsic except set_weights function will
         // have a higher priority than the set_weights call
-        u64::max_value()
+        u64::MAX
     }
 
     pub fn get_priority_set_weights(who: &T::AccountId, netuid: u16) -> u64 {
@@ -2219,9 +2217,9 @@ where
                     Err(InvalidTransaction::Call.into())
                 }
             }
-            Some(Call::set_root_weights { netuid, .. }) => {
-                if Self::check_weights_min_stake(who) {
-                    let priority: u64 = Self::get_priority_set_weights(who, *netuid);
+            Some(Call::set_root_weights { netuid, hotkey, .. }) => {
+                if Self::check_weights_min_stake(hotkey) {
+                    let priority: u64 = Self::get_priority_set_weights(hotkey, *netuid);
                     Ok(ValidTransaction {
                         priority,
                         longevity: 1,
