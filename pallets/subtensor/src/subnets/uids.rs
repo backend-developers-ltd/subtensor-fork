@@ -16,9 +16,9 @@ impl<T: Config> Pallet<T> {
         N: From<u8>,
     {
         move |vec: &mut Vec<N>| {
-            if vec.len() > position as usize {
-                vec[position as usize] = N::from(0);
-            };
+			if let Some(element) = vec.get_mut(position as usize) {
+				*element = N::from(0);
+			}
         }
     }
 
