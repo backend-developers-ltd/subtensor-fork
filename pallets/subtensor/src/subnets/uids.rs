@@ -9,26 +9,20 @@ impl<T: Config> Pallet<T> {
         SubnetworkN::<T>::get(netuid)
     }
 
-    /// Returns a callback that sets the element at the given position to zero, doing nothing if the
-    /// position is out of bounds
-    fn clear_element_at<N>(position: u16) -> impl Fn(&mut Vec<N>)
-    where
-        N: From<u8>,
-    {
-        move |vec: &mut Vec<N>| {
-			if let Some(element) = vec.get_mut(position as usize) {
-				*element = N::from(0);
-			}
+    /// Sets value for the element at the given position if it exists.
+    pub fn set_element_at<N>(vec: &mut [N], position: usize, value: N) {
+        if let Some(element) = vec.get_mut(position) {
+            *element = value;
         }
     }
 
     /// Resets the trust, emission, consensus, incentive, dividends of the neuron to default
     pub fn clear_neuron(netuid: u16, neuron_uid: u16) {
-        Emission::<T>::mutate(netuid, Self::clear_element_at(neuron_uid));
-        Trust::<T>::mutate(netuid, Self::clear_element_at(neuron_uid));
-        Consensus::<T>::mutate(netuid, Self::clear_element_at(neuron_uid));
-        Incentive::<T>::mutate(netuid, Self::clear_element_at(neuron_uid));
-        Dividends::<T>::mutate(netuid, Self::clear_element_at(neuron_uid));
+        Emission::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
+        Trust::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
+        Consensus::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
+        Incentive::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
+        Dividends::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
     }
 
     /// Replace the neuron under this uid.
