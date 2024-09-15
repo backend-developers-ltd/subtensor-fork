@@ -18,11 +18,16 @@ impl<T: Config> Pallet<T> {
 
     /// Resets the trust, emission, consensus, incentive, dividends of the neuron to default
     pub fn clear_neuron(netuid: u16, neuron_uid: u16) {
-        Emission::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
-        Trust::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
-        Consensus::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
-        Incentive::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
-        Dividends::<T>::mutate(netuid, |v| Self::set_element_at(v, neuron_uid.into(), 0));
+        let neuron_index: usize = neuron_uid.into();
+        Self::set_element_at(&mut Emission::<T>::get(netuid), neuron_index, 0);
+        for storage in &mut [
+            &mut Trust::<T>::get(netuid),
+            &mut Consensus::<T>::get(netuid),
+            &mut Incentive::<T>::get(netuid),
+            &mut Dividends::<T>::get(netuid),
+        ] {
+            Self::set_element_at(storage, neuron_index, 0);
+        }
     }
 
     /// Replace the neuron under this uid.
