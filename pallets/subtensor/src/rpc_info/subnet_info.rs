@@ -51,7 +51,7 @@ pub struct SubnetInfov2<T: Config> {
     identity: Option<SubnetIdentity>,
 }
 
-#[freeze_struct("55b472510f10e76a")]
+#[freeze_struct("61ae927da2880759")]
 #[derive(Decode, Encode, PartialEq, Eq, Clone, Debug)]
 pub struct SubnetHyperparams {
     rho: Compact<u16>,
@@ -77,7 +77,6 @@ pub struct SubnetHyperparams {
     adjustment_alpha: Compact<u64>,
     difficulty: Compact<u64>,
     commit_reveal_weights_interval: Compact<u64>,
-    commit_reveal_weights_enabled: bool,
     alpha_high: Compact<u16>,
     alpha_low: Compact<u16>,
     liquid_alpha_enabled: bool,
@@ -253,7 +252,6 @@ impl<T: Config> Pallet<T> {
         let adjustment_alpha = Self::get_adjustment_alpha(netuid);
         let difficulty = Self::get_difficulty_as_u64(netuid);
         let commit_reveal_periods = Self::get_reveal_period(netuid);
-        let commit_reveal_weights_enabled = Self::get_commit_reveal_weights_enabled(netuid);
         let liquid_alpha_enabled = Self::get_liquid_alpha_enabled(netuid);
         let (alpha_low, alpha_high): (u16, u16) = Self::get_alpha_values(netuid);
 
@@ -281,7 +279,6 @@ impl<T: Config> Pallet<T> {
             adjustment_alpha: adjustment_alpha.into(),
             difficulty: difficulty.into(),
             commit_reveal_weights_interval: commit_reveal_periods.into(),
-            commit_reveal_weights_enabled,
             alpha_high: alpha_high.into(),
             alpha_low: alpha_low.into(),
             liquid_alpha_enabled,
