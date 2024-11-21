@@ -1882,13 +1882,19 @@ fn test_childkey_single_parent_emission() {
         let uids: Vec<u16> = vec![1]; // Only set weight for the child (UID 1)
         let values: Vec<u16> = vec![u16::MAX]; // Use maximum value for u16
         let version_key = SubtensorModule::get_weights_version_key(netuid);
-        assert_ok!(SubtensorModule::set_weights(
+
+        // TODO: replace with commit reveal ops - manually set_last_update_for_uid for now
+        assert_ok!(SubtensorModule::do_set_weights(
             origin,
             netuid,
             uids,
             values,
             version_key
         ));
+        let neuron_uid =
+            SubtensorModule::get_uid_for_net_and_hotkey(netuid, &weight_setter).unwrap();
+        let current_block: u64 = SubtensorModule::get_current_block_as_u64();
+        SubtensorModule::set_last_update_for_uid(netuid, neuron_uid, current_block);
 
         // Run epoch with a hardcoded emission value
         let hardcoded_emission: u64 = 1_000_000_000; // 1 TAO
@@ -2028,7 +2034,7 @@ fn test_childkey_multiple_parents_emission() {
         let uids: Vec<u16> = vec![0, 1, 2];
         let values: Vec<u16> = vec![0, 65354, 65354];
         let version_key = SubtensorModule::get_weights_version_key(netuid);
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             RuntimeOrigin::signed(weight_setter),
             netuid,
             uids,
@@ -2205,7 +2211,7 @@ fn test_parent_child_chain_emission() {
         // Ensure we can set weights without rate limiting
         SubtensorModule::set_weights_set_rate_limit(netuid, 0);
 
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             origin,
             netuid,
             uids,
@@ -2350,7 +2356,7 @@ fn test_dynamic_parent_child_relationships() {
         // Ensure we can set weights without rate limiting
         SubtensorModule::set_weights_set_rate_limit(netuid, 0);
 
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             origin,
             netuid,
             uids,
@@ -3084,13 +3090,17 @@ fn test_rank_trust_incentive_calculation_with_parent_child() {
             .chain(other_validators.iter().map(|(h, _)| h))
             .chain(std::iter::once(&child_hotkey))
         {
-            assert_ok!(SubtensorModule::set_weights(
+            assert_ok!(SubtensorModule::do_set_weights(
                 RuntimeOrigin::signed(*hotkey),
                 netuid,
                 all_uids.clone(),
                 validator_weights.clone(),
                 0
             ));
+			// TODO: replace with commit reveal ops - manually set_last_update_for_uid for now
+			let neuron_uid = SubtensorModule::get_uid_for_net_and_hotkey(netuid, &hotkey).unwrap();
+			let current_block: u64 = SubtensorModule::get_current_block_as_u64();
+			SubtensorModule::set_last_update_for_uid(netuid, neuron_uid, current_block);
         }
 
         step_block(10);
@@ -3131,7 +3141,7 @@ fn test_rank_trust_incentive_calculation_with_parent_child() {
         ));
 
         // Child now sets weights as a validator
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             RuntimeOrigin::signed(child_hotkey),
             netuid,
             all_uids.clone(),
@@ -3293,7 +3303,7 @@ fn test_childkey_set_weights_single_parent() {
         let uids: Vec<u16> = vec![1]; // Only set weight for the child (UID 1)
         let values: Vec<u16> = vec![u16::MAX]; // Use maximum value for u16
         let version_key = SubtensorModule::get_weights_version_key(netuid);
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             origin,
             netuid,
             uids.clone(),
@@ -3312,7 +3322,7 @@ fn test_childkey_set_weights_single_parent() {
 
         // Check the child cannot set weights
         assert_noop!(
-            SubtensorModule::set_weights(
+            SubtensorModule::do_set_weights(
                 RuntimeOrigin::signed(child),
                 netuid,
                 uids.clone(),
@@ -3334,7 +3344,7 @@ fn test_childkey_set_weights_single_parent() {
         );
 
         // Check the child can set weights
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             RuntimeOrigin::signed(child),
             netuid,
             uids,
@@ -3395,7 +3405,7 @@ fn test_set_weights_no_parent() {
 
         // Check the hotkey cannot set weights
         assert_noop!(
-            SubtensorModule::set_weights(
+            SubtensorModule::do_set_weights(
                 RuntimeOrigin::signed(hotkey),
                 netuid,
                 uids.clone(),
@@ -3417,7 +3427,7 @@ fn test_set_weights_no_parent() {
         );
 
         // Check the hotkey can set weights
-        assert_ok!(SubtensorModule::set_weights(
+        assert_ok!(SubtensorModule::do_set_weights(
             RuntimeOrigin::signed(hotkey),
             netuid,
             uids,

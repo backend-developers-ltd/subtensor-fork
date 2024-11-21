@@ -36,45 +36,6 @@ benchmarks! {
 
   }: register( RawOrigin::Signed( hotkey.clone() ), netuid, block_number, nonce, work, hotkey.clone(), coldkey.clone() )
 
-  benchmark_set_weights {
-
-    // This is a whitelisted caller who can make transaction without weights.
-    let netuid: u16 = 1;
-    let version_key: u64 = 1;
-    let tempo: u16 = 1;
-    let modality: u16 = 0;
-
-    Subtensor::<T>::init_new_network(netuid, tempo);
-    Subtensor::<T>::set_max_allowed_uids( netuid, 4096 );
-
-    Subtensor::<T>::set_network_registration_allowed( netuid, true );
-    Subtensor::<T>::set_max_registrations_per_block( netuid, 4096 );
-    Subtensor::<T>::set_target_registrations_per_interval( netuid, 4096 );
-
-    let mut seed : u32 = 1;
-    let mut dests: Vec<u16> = vec![];
-    let mut weights: Vec<u16> = vec![];
-    let signer : T::AccountId = account("Alice", 0, seed);
-
-    for id in 0..4096_u16 {
-      let hotkey: T::AccountId = account("Alice", 0, seed);
-      let coldkey: T::AccountId = account("Test", 0, seed);
-      seed += 1;
-
-        Subtensor::<T>::set_burn(netuid, 1);
-        let amount_to_be_staked = 1000000u32.into();
-      Subtensor::<T>::add_balance_to_coldkey_account(&coldkey.clone(), amount_to_be_staked);
-
-      Subtensor::<T>::do_burned_registration(RawOrigin::Signed(coldkey.clone()).into(), netuid, hotkey.clone())?;
-
-      let uid = Subtensor::<T>::get_uid_for_net_and_hotkey(netuid, &hotkey.clone()).unwrap();
-      Subtensor::<T>::set_validator_permit_for_uid(netuid, uid, true);
-      dests.push(id);
-      weights.push(id);
-    }
-
-  }: set_weights(RawOrigin::Signed( signer.clone() ), netuid, dests, weights, version_key)
-
 
   benchmark_become_delegate {
     // This is a whitelisted caller who can make transaction without weights.

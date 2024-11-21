@@ -404,7 +404,7 @@ impl<T: Config> Pallet<T> {
         })
     }
 
-    /// ---- The implementation for the extrinsic set_weights.
+    /// ---- Used by reveal weights to set the weights on chain.
     ///
     /// # Args:
     ///  * 'origin': (<T as frame_system::Config>RuntimeOrigin):
@@ -519,49 +519,47 @@ impl<T: Config> Pallet<T> {
             Error::<T>::IncorrectWeightVersionKey
         );
 
-        // --- 9. Ensure the uid is not setting weights faster than the weights_set_rate_limit.
+        // --- 8. Check that the neuron uid is an allowed validator permitted to set non-self weights.
         let neuron_uid = Self::get_uid_for_net_and_hotkey(netuid, &hotkey)?;
-
-        // --- 10. Check that the neuron uid is an allowed validator permitted to set non-self weights.
         ensure!(
             Self::check_validator_permit(netuid, neuron_uid, &uids, &values),
             Error::<T>::NeuronNoValidatorPermit
         );
 
-        // --- 11. Ensure the passed uids contain no duplicates.
+        // --- 9. Ensure the passed uids contain no duplicates.
         ensure!(!Self::has_duplicate_uids(&uids), Error::<T>::DuplicateUids);
 
-        // --- 12. Ensure that the passed uids are valid for the network.
+        // --- 10. Ensure that the passed uids are valid for the network.
         ensure!(
             !Self::contains_invalid_uids(netuid, &uids),
             Error::<T>::UidVecContainInvalidOne
         );
 
-        // --- 13. Ensure that the weights have the required length.
+        // --- 11. Ensure that the weights have the required length.
         ensure!(
             Self::check_length(netuid, neuron_uid, &uids, &values),
             Error::<T>::WeightVecLengthIsLow
         );
 
-        // --- 14. Max-upscale the weights.
+        // --- 12. Max-upscale the weights.
         let max_upscaled_weights: Vec<u16> = vec_u16_max_upscale_to_u16(&values);
 
-        // --- 15. Ensure the weights are max weight limited
+        // --- 13. Ensure the weights are max weight limited
         ensure!(
             Self::max_weight_limited(netuid, neuron_uid, &uids, &max_upscaled_weights),
             Error::<T>::MaxWeightExceeded
         );
 
-        // --- 16. Zip weights for sinking to storage map.
+        // --- 14. Zip weights for sinking to storage map.
         let mut zipped_weights: Vec<(u16, u16)> = vec![];
         for (uid, val) in uids.iter().zip(max_upscaled_weights.iter()) {
             zipped_weights.push((*uid, *val))
         }
 
-        // --- 17. Set weights under netuid, uid double map entry.
+        // --- 15. Set weights under netuid, uid double map entry.
         Weights::<T>::insert(netuid, neuron_uid, zipped_weights);
 
-        // --- 18. Emit the tracking event.
+        // --- 16. Emit the tracking event.
         log::debug!(
             "WeightsSet( netuid:{:?}, neuron_uid:{:?} )",
             netuid,
@@ -569,7 +567,7 @@ impl<T: Config> Pallet<T> {
         );
         Self::deposit_event(Event::WeightsSet(netuid, neuron_uid));
 
-        // --- 19. Return ok.
+        // --- 17. Return ok.
         Ok(())
     }
 
